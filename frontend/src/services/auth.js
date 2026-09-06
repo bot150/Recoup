@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export async function signUp(email, password) {
+export async function signUp(email, password, profileData = {}) {
   if (!supabase) {
     throw new Error('Supabase is not configured.');
   }
@@ -8,9 +8,22 @@ export async function signUp(email, password) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        full_name: profileData.full_name || '',
+        username: profileData.username || '',
+        date_of_birth: profileData.date_of_birth || '',
+        phone: profileData.phone || '',
+        business_name: profileData.business_name || '',
+        bank_account_last4: profileData.bank_account_last4 || '',
+      },
+    },
   });
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data;
 }
 
@@ -80,4 +93,28 @@ export function onAuthStateChange(callback) {
   }
 
   return supabase.auth.onAuthStateChange(callback);
+}
+
+export async function updateProfile(profileData = {}) {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.');
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    data: {
+      full_name: profileData.full_name || '',
+      username: profileData.username || '',
+      phone: profileData.phone || '',
+      date_of_birth: profileData.date_of_birth || '',
+      business_name: profileData.business_name || '',
+      bank_account_last4:
+        profileData.bank_account_last4 || '',
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }

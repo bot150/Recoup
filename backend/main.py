@@ -1,70 +1,21 @@
-# ============================================================
-# RECOUP FASTAPI BACKEND
-# ============================================================
-
 import os
-import sys
-import csv
 import uuid
+from datetime import datetime
 
 import pandas as pd
-
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.recoup_agent import (
-    load_customers,
-    run_recoup
-)
-
-from fastapi import FastAPI, HTTPException
-
-from fastapi.middleware.cors import CORSMiddleware
-
 
 # ============================================================
-# PROJECT ROOT
-# ============================================================
-
-PROJECT_ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
-
-sys.path.insert(0, PROJECT_ROOT)
-
-
-# ============================================================
-# FILE PATHS
-# ============================================================
-
-AUDIT_FILE = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "audit_log.csv"
-)
-
-EVALUATION_FILE = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "evaluation_payments.csv"
-)
-
-AGENTIC_RESULTS_FILE = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "agentic_evaluation_results.csv"
-)
-
-
-# ============================================================
-# FASTAPI APP
+# APP CONFIGURATION
 # ============================================================
 
 app = FastAPI(
     title="Recoup API",
     description="Adaptive AI Revenue Recovery Agent",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
@@ -77,16 +28,35 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://localhost:5174"
+        "http://localhost:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
 # ============================================================
-# MOCK PAYMENT REQUEST
+# PATHS
+# ============================================================
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+EVALUATION_FILE = os.path.join(
+    DATA_DIR,
+    "evaluation_payments.csv"
+)
+
+AUDIT_FILE = os.path.join(
+    DATA_DIR,
+    "audit_log.csv"
+)
+
+
+# ============================================================
+# REQUEST MODELS
 # ============================================================
 
 class MockPaymentRequest(BaseModel):
@@ -96,318 +66,145 @@ class MockPaymentRequest(BaseModel):
 
 
 # ============================================================
-# HEALTH CHECK
+# BASIC ENDPOINTS
 # ============================================================
 
 @app.get("/")
 def root():
     return {
-        "service": "Recoup",
+        "message": "Recoup API is running",
         "status": "online",
-        "description": "Adaptive AI Revenue Recovery Agent"
+        "version": "1.0.0",
     }
 
 
 @app.get("/api/health")
 def health():
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "service": "Recoup Backend",
+        "api": "online",
     }
 
 
 # ============================================================
-# AUDIT DATA
-# ============================================================
-
-@app.get("/api/audit")
-def get_audit():
-
-    if not os.path.exists(AUDIT_FILE):
-        return {
-            "records": []
-        }
-
-    df = pd.read_csv(AUDIT_FILE)
-
-    df = df.fillna("")
-
-    records = df.to_dict(
-        orient="records"
-    )
-
-    return {
-        "records": records
-    }
-
-
-# ============================================================
-# RECENT AUDIT EVENTS
-# ============================================================
-
-@app.get("/api/audit/recent")
-def get_recent_audit():
-
-    if not os.path.exists(AUDIT_FILE):
-        return {
-            "records": []
-        }
-
-    df = pd.read_csv(AUDIT_FILE)
-
-    df = df.fillna("")
-
-    df = df.tail(20)
-
-    return {
-        "records": df.to_dict(
-            orient="records"
-        )
-    }
-
-
-# ============================================================
-# EVALUATION PAYMENTS
+# PAYMENTS
 # ============================================================
 
 @app.get("/api/payments")
 def get_payments():
 
     if not os.path.exists(EVALUATION_FILE):
+        raise HTTPException(
+            status_code=404,
+            detail="Evaluation payments file not found."
+        )
+
+    try:
+        df = pd.read_csv(EVALUATION_FILE)
+
+        df = df.fillna("")
+
+        payments = df.to_dict(orient="records")
+
         return {
-            "payments": []
+            "success": True,
+            "count": len(payments),
+            "payments": payments,
         }
 
-    df = pd.read_csv(EVALUATION_FILE)
-
-    df = df.fillna("")
-
-    return {
-        "payments": df.to_dict(
-            orient="records"
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
         )
-    }
 
 
 # ============================================================
-# AGENTIC EVALUATION RESULTS
-# ============================================================
-
-@app.get("/api/evaluation")
-def get_evaluation():
-
-    if not os.path.exists(AGENTIC_RESULTS_FILE):
-        return {
-            "results": []
-        }
-
-    df = pd.read_csv(
-        AGENTIC_RESULTS_FILE
-    )
-
-    df = df.fillna("")
-
-    return {
-        "results": df.to_dict(
-            orient="records"
-        )
-    }
-
-
-# ============================================================
-# DASHBOARD SUMMARY
-# ============================================================
-
-@app.get("/api/summary")
-def get_summary():
-
-    # Synthetic evaluation benchmark.
-    # These are not production Razorpay results.
-
-    baseline_recovered = 235
-    baseline_rate = 38.84
-    baseline_amount = 597783.55
-    baseline_attempts = 1.69
-
-    recoup_recovered = 515
-    recoup_rate = 85.12
-    recoup_amount = 1387407.84
-    recoup_attempts = 1.25
-
-    additional_amount = (
-        recoup_amount
-        - baseline_amount
-    )
-
-    rate_uplift = (
-        recoup_rate
-        - baseline_rate
-    )
-
-    money_uplift = (
-        (
-            recoup_amount
-            - baseline_amount
-        )
-        / baseline_amount
-    ) * 100
-
-    return {
-        "evaluation_payments": 605,
-
-        "baseline": {
-            "recovered_payments":
-                baseline_recovered,
-
-            "recovery_rate":
-                baseline_rate,
-
-            "total_recovered":
-                baseline_amount,
-
-            "average_attempts":
-                baseline_attempts
-        },
-
-        "recoup": {
-            "recovered_payments":
-                recoup_recovered,
-
-            "recovery_rate":
-                recoup_rate,
-
-            "total_recovered":
-                recoup_amount,
-
-            "average_attempts":
-                recoup_attempts,
-
-            "second_actions":
-                151,
-
-            "policy_blocks":
-                0
-        },
-
-        "improvement": {
-            "additional_recovered":
-                round(
-                    additional_amount,
-                    2
-                ),
-
-            "recovery_rate_uplift":
-                round(
-                    rate_uplift,
-                    2
-                ),
-
-            "relative_money_uplift":
-                round(
-                    money_uplift,
-                    2
-                )
-        },
-
-        "environment":
-            "Synthetic evaluation environment"
-    }
-
-
-# ============================================================
-# MOCK CHECKOUT - CREATE FAILED PAYMENT
+# CREATE MOCK FAILED PAYMENT
 # ============================================================
 
 @app.post("/api/payments/mock-failure")
-def create_mock_failure(
-    request: MockPaymentRequest
-):
+def create_mock_failure(request: MockPaymentRequest):
 
-    if not os.path.exists(
-        EVALUATION_FILE
-    ):
+    if not os.path.exists(EVALUATION_FILE):
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Evaluation payments "
-                "file not found."
-            )
+            detail="Evaluation payments file not found."
         )
 
     if request.amount <= 0:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Amount must be "
-                "greater than zero."
-            )
+            detail="Amount must be greater than zero."
         )
 
     try:
 
-        # Load existing payments
-        df = pd.read_csv(
-            EVALUATION_FILE
-        )
+        # ----------------------------------------------------
+        # Load existing evaluation data
+        # ----------------------------------------------------
+
+        df = pd.read_csv(EVALUATION_FILE)
 
         df = df.fillna("")
 
         if df.empty:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "No evaluation "
-                    "payments found."
-                )
+                detail="No evaluation payments found."
             )
 
-        # Use an existing payment as
-        # the structure/template.
+        # ----------------------------------------------------
+        # Use an existing row as a template.
+        # This preserves the exact CSV structure.
+        # ----------------------------------------------------
+
         template = df.iloc[0].to_dict()
 
-        # Generate unique payment ID
+        # ----------------------------------------------------
+        # Generate unique mock payment ID
+        # ----------------------------------------------------
+
         payment_id = (
-            "MOCK_"
-            + uuid.uuid4().hex[:8].upper()
+            "MOCK_" +
+            uuid.uuid4().hex[:8].upper()
         )
 
         new_payment = {}
 
-        # Preserve exact CSV structure
+        # Preserve every existing column
         for column in df.columns:
-            new_payment[column] = (
-                template.get(column, "")
+            new_payment[column] = template.get(
+                column,
+                ""
             )
 
         # ----------------------------------------------------
-        # Payment ID
+        # Override payment information
         # ----------------------------------------------------
 
         if "payment_id" in new_payment:
-            new_payment["payment_id"] = (
-                payment_id
-            )
-
-        # ----------------------------------------------------
-        # Amount
-        # ----------------------------------------------------
+            new_payment["payment_id"] = payment_id
 
         if "amount" in new_payment:
             new_payment["amount"] = float(
                 request.amount
             )
 
-        # ----------------------------------------------------
-        # Failure reason
-        # ----------------------------------------------------
+        # IMPORTANT:
+        # Give the new mock payment the current timestamp.
+        # This makes it appear at the top when Recovery
+        # Operations sorts by timestamp descending.
+        if "timestamp" in new_payment:
+            new_payment["timestamp"] = (
+                datetime.now().isoformat()
+            )
 
         if "failure_reason" in new_payment:
             new_payment["failure_reason"] = (
                 request.failure_reason
             )
-
-        # ----------------------------------------------------
-        # Payment method
-        # ----------------------------------------------------
 
         if "payment_method" in new_payment:
             new_payment["payment_method"] = (
@@ -418,10 +215,6 @@ def create_mock_failure(
             new_payment["method"] = (
                 request.method
             )
-
-        # ----------------------------------------------------
-        # Status
-        # ----------------------------------------------------
 
         if "status" in new_payment:
             new_payment["status"] = "FAILED"
@@ -443,21 +236,25 @@ def create_mock_failure(
             ignore_index=True
         )
 
-        # Save to CSV
+        # ----------------------------------------------------
+        # Save permanently
+        # ----------------------------------------------------
+
         df.to_csv(
             EVALUATION_FILE,
             index=False
         )
 
         print(
-            "[MOCK PAYMENT] "
-            f"Created {payment_id} "
-            f"for ₹{request.amount:.2f}"
+            f"[MOCK PAYMENT] Created "
+            f"{payment_id} for "
+            f"₹{request.amount:.2f}"
         )
 
         return {
             "success": True,
-            "payment": new_payment
+            "message": "Mock failed payment created.",
+            "payment": new_payment,
         }
 
     except HTTPException:
@@ -466,8 +263,7 @@ def create_mock_failure(
     except Exception as e:
 
         print(
-            "[MOCK PAYMENT ERROR] "
-            f"{str(e)}"
+            f"[MOCK PAYMENT ERROR] {str(e)}"
         )
 
         raise HTTPException(
@@ -477,79 +273,33 @@ def create_mock_failure(
 
 
 # ============================================================
-# RECOVER PAYMENT
+# AUDIT
 # ============================================================
 
-@app.post("/api/recover/{payment_id}")
-def recover_payment(payment_id: str):
+@app.get("/api/audit")
+def get_audit():
 
-    if not os.path.exists(
-        EVALUATION_FILE
-    ):
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                "Evaluation payments "
-                "file not found."
-            )
-        )
-
-    payments_df = pd.read_csv(
-        EVALUATION_FILE
-    )
-
-    payments_df = payments_df.fillna("")
-
-    payment_rows = payments_df[
-        payments_df["payment_id"]
-        .astype(str)
-        == str(payment_id)
-    ]
-
-    if payment_rows.empty:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                f"Payment {payment_id} "
-                "not found."
-            )
-        )
-
-    payment = (
-        payment_rows
-        .iloc[0]
-        .to_dict()
-    )
-
-    customers = load_customers()
-
-    customer_id = payment[
-        "customer_id"
-    ]
-
-    if customer_id not in customers:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                f"Customer {customer_id} "
-                "not found."
-            )
-        )
-
-    customer = customers[
-        customer_id
-    ]
+    if not os.path.exists(AUDIT_FILE):
+        return {
+            "success": True,
+            "count": 0,
+            "audit": [],
+        }
 
     try:
 
-        result = run_recoup(
-            payment,
-            customer
+        df = pd.read_csv(AUDIT_FILE)
+
+        df = df.fillna("")
+
+        records = df.to_dict(
+            orient="records"
         )
 
         return {
             "success": True,
-            "result": result
+            "count": len(records),
+            "audit": records,
         }
 
     except Exception as e:
@@ -561,16 +311,278 @@ def recover_payment(payment_id: str):
 
 
 # ============================================================
-# RUN SERVER
+# RECENT AUDIT
 # ============================================================
 
-if __name__ == "__main__":
+@app.get("/api/audit/recent")
+def get_recent_audit():
 
-    import uvicorn
+    if not os.path.exists(AUDIT_FILE):
+        return {
+            "success": True,
+            "count": 0,
+            "audit": [],
+        }
 
-    uvicorn.run(
-        "backend.main:app",
-        host="127.0.0.1",
-        port=8000,
-        reload=True
+    try:
+
+        df = pd.read_csv(AUDIT_FILE)
+
+        df = df.fillna("")
+
+        # Most recent records first
+        if "timestamp" in df.columns:
+            df = df.sort_values(
+                by="timestamp",
+                ascending=False
+            )
+
+        df = df.head(10)
+
+        records = df.to_dict(
+            orient="records"
+        )
+
+        return {
+            "success": True,
+            "count": len(records),
+            "audit": records,
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# ============================================================
+# EVALUATION
+# ============================================================
+
+@app.get("/api/evaluation")
+def get_evaluation():
+
+    evaluation_file = os.path.join(
+        DATA_DIR,
+        "evaluation_results.csv"
     )
+
+    if not os.path.exists(evaluation_file):
+
+        return {
+            "success": True,
+            "evaluation": [],
+        }
+
+    try:
+
+        df = pd.read_csv(
+            evaluation_file
+        )
+
+        df = df.fillna("")
+
+        records = df.to_dict(
+            orient="records"
+        )
+
+        return {
+            "success": True,
+            "count": len(records),
+            "evaluation": records,
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# ============================================================
+# SUMMARY
+# ============================================================
+
+@app.get("/api/summary")
+def get_summary():
+
+    return {
+        "success": True,
+
+        "baseline": {
+            "recovered_payments": 235,
+            "total_payments": 605,
+            "recovery_rate": 38.84,
+            "recovered_amount": 597783.55,
+            "average_attempts": 1.69,
+        },
+
+        "ml": {
+            "recovered_payments": 403,
+            "total_payments": 605,
+            "recovery_rate": 66.61,
+            "recovered_amount": 1075704.97,
+            "average_attempts": 1.00,
+        },
+
+        "agentic": {
+            "recovered_payments": 515,
+            "total_payments": 605,
+            "recovery_rate": 85.12,
+            "recovered_amount": 1387407.84,
+            "average_attempts": 1.25,
+            "second_actions": 151,
+        },
+
+        "improvement": {
+            "additional_revenue": 789624.29,
+            "recovery_rate_uplift": 46.28,
+            "relative_improvement": 132.09,
+        },
+    }
+
+
+# ============================================================
+# RECOVERY AGENT
+# ============================================================
+
+@app.post("/api/recover/{payment_id}")
+def recover_payment(payment_id: str):
+
+    if not os.path.exists(EVALUATION_FILE):
+        raise HTTPException(
+            status_code=404,
+            detail="Evaluation payments file not found."
+        )
+
+    try:
+
+        # ----------------------------------------------------
+        # Load payments
+        # ----------------------------------------------------
+
+        df = pd.read_csv(
+            EVALUATION_FILE
+        )
+
+        df = df.fillna("")
+
+        matching = df[
+            df["payment_id"].astype(str)
+            == str(payment_id)
+        ]
+
+        if matching.empty:
+
+            raise HTTPException(
+                status_code=404,
+                detail=f"Payment {payment_id} not found."
+            )
+
+        payment = matching.iloc[0].to_dict()
+
+        # ----------------------------------------------------
+        # Import recovery agent
+        # ----------------------------------------------------
+
+        try:
+
+            from backend.agent import run_recovery_agent
+
+        except ImportError:
+
+            try:
+                from agent import run_recovery_agent
+
+            except ImportError as e:
+
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        "Recovery agent could not be imported: "
+                        + str(e)
+                    )
+                )
+
+        # ----------------------------------------------------
+        # Execute recovery agent
+        # ----------------------------------------------------
+
+        print()
+        print("=" * 60)
+        print("RECOUP AGENT")
+        print("=" * 60)
+
+        print(
+            f"Payment ID : "
+            f"{payment.get('payment_id')}"
+        )
+
+        print(
+            f"Customer ID: "
+            f"{payment.get('customer_id')}"
+        )
+
+        print(
+            f"Amount     : "
+            f"₹{float(payment.get('amount', 0)):,.2f}"
+        )
+
+        print(
+            f"Failure reason: "
+            f"{payment.get('failure_reason')}"
+        )
+
+        # ----------------------------------------------------
+        # Run agent
+        # ----------------------------------------------------
+
+        result = run_recovery_agent(
+            payment
+        )
+
+        print("=" * 60)
+
+        return {
+            "success": True,
+            "payment_id": payment_id,
+            "result": result,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        print(
+            f"[RECOVERY ERROR] {str(e)}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# ============================================================
+# STARTUP MESSAGE
+# ============================================================
+
+@app.on_event("startup")
+def startup_event():
+
+    print()
+    print("=" * 60)
+    print("RECOUP BACKEND")
+    print("=" * 60)
+    print("Status : ONLINE")
+    print(f"Data   : {DATA_DIR}")
+    print(
+        f"Payments file exists: "
+        f"{os.path.exists(EVALUATION_FILE)}"
+    )
+    print("=" * 60)
+    print()

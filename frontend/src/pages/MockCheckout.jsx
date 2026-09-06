@@ -13,7 +13,7 @@ export default function MockCheckout() {
   const navigate = useNavigate();
 
   const [method, setMethod] = useState('UPI');
-  const [amount, setAmount] = useState('739.29');
+  const [amount, setAmount] = useState('');
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedPayment, setSavedPayment] = useState(null);
@@ -67,15 +67,14 @@ export default function MockCheckout() {
   };
 
   const continueToRecoup = () => {
-    if (!savedPayment?.payment_id) {
-      setError('Payment was not saved.');
-      return;
-    }
+  if (!savedPayment?.payment_id) {
+    setError('Payment was not saved.');
+    return;
+  }
 
-    navigate(
-      `/recovery?payment=${savedPayment.payment_id}`
-    );
-  };
+  window.location.href =
+    `/recovery?payment=${savedPayment.payment_id}`;
+};
 
   const resetCheckout = () => {
     setFailed(false);

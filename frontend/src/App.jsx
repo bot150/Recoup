@@ -7,6 +7,7 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
+
 import MockCheckout from './pages/MockCheckout';
 import './App.css';
 
@@ -16,6 +17,7 @@ import Header from './components/Header';
 import RecoveryModal from './components/RecoveryModal';
 
 // Pages
+import CompleteProfile from './pages/CompleteProfile';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -109,7 +111,6 @@ function App() {
         }
 
       }
-
     };
 
 
@@ -229,8 +230,43 @@ function App() {
 
 
         {/* ==================================================
+            DEMO CHECKOUT
+
+            IMPORTANT:
+            This MUST come before path="/*"
+        ================================================== */}
+
+        <Route
+          path="/checkout"
+          element={
+            session ? (
+              <MockCheckout />
+            ) : (
+              <Navigate
+                to="/login"
+                replace
+              />
+            )
+          }
+        />
+
+
+        {/* ==================================================
             PROTECTED DASHBOARD
         ================================================== */}
+        <Route
+  path="/complete-profile"
+  element={
+    session ? (
+      <CompleteProfile user={session.user} />
+    ) : (
+      <Navigate
+        to="/login"
+        replace
+      />
+    )
+  }
+/>
 
         <Route
           path="/*"
@@ -248,18 +284,12 @@ function App() {
             )
           }
         />
-        <Route
-          path="/checkout"
-            element={<MockCheckout />}
-         />
 
       </Routes>
 
     </BrowserRouter>
   );
 }
-
-
 
 
 // ============================================================
@@ -273,6 +303,34 @@ function Dashboard({
 
   const navigate = useNavigate();
   const location = useLocation();
+    // ==========================================================
+  // GOOGLE / NEW USER PROFILE CHECK
+  // ==========================================================
+
+  useEffect(() => {
+    if (!session?.user) {
+      return;
+    }
+
+    const metadata = session.user.user_metadata || {};
+
+    const profileComplete =
+      Boolean(metadata.full_name) &&
+      Boolean(metadata.username) &&
+      Boolean(metadata.phone) &&
+      Boolean(metadata.date_of_birth) &&
+      Boolean(metadata.business_name) &&
+      Boolean(metadata.bank_account_last4);
+
+    if (
+      !profileComplete &&
+      location.pathname !== '/complete-profile'
+    ) {
+      navigate('/complete-profile', {
+        replace: true,
+      });
+    }
+  }, [session, location.pathname, navigate]);
 
 
   // ==========================================================
@@ -432,9 +490,9 @@ function Dashboard({
 
         setEvaluation(
           Array.isArray(
-            evaluationData?.results
+            evaluationData?.evaluation
           )
-            ? evaluationData.results
+            ? evaluationData.evaluation
             : []
         );
 
@@ -445,9 +503,9 @@ function Dashboard({
 
         setAuditRecords(
           Array.isArray(
-            auditData?.records
+            auditData?.audit
           )
-            ? auditData.records
+            ? auditData.audit
             : []
         );
 
@@ -815,6 +873,8 @@ function Dashboard({
               element={
                 <Profile
 
+                  user={session?.user}
+
                   session={session}
 
                   onLogout={handleLogout}
@@ -837,6 +897,7 @@ function Dashboard({
                 />
               }
             />
+
 
           </Routes>
 
