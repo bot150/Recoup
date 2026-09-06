@@ -29,7 +29,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
-        "https://recoup-3iralq058-vvyhu17-5036s-projects.vercel.app",
+        "https://recoup-ruby.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
