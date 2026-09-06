@@ -1,3 +1,4 @@
+<div align="center">
 # Recoup
  
 **Adaptive AI Revenue Recovery Agent**
@@ -10,6 +11,7 @@
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
  
 Recoup decides **whether, what, and when** to do about a failed payment — and explains why.
+</div>
  
 ---
  
