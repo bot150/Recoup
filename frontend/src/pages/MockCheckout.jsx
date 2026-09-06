@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://recoup-api-953t.onrender.com';
 
 export default function MockCheckout() {
   const navigate = useNavigate();
