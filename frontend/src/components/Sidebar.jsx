@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   LayoutDashboard,
@@ -22,6 +23,8 @@ export default function Sidebar({
   onProfile,
   onLogout,
 }) {
+  const navigate = useNavigate();
+
   const navItems = [
     {
       id: 'overview',
@@ -52,7 +55,7 @@ export default function Sidebar({
 
   const handleNavClick = (tabId) => {
     if (tabId === 'checkout') {
-      window.location.href = '/checkout';
+      navigate('/checkout');
       return;
     }
 
@@ -97,7 +100,6 @@ export default function Sidebar({
           mobileOpen ? 'open' : ''
         }`}
       >
-
         {/* Brand */}
         <div className="brand">
           <div className="brand-mark">
@@ -249,7 +251,6 @@ export default function Sidebar({
 
         {/* Sidebar bottom */}
         <div className="sidebar-bottom">
-
           <div className="agent-status-card">
             <div className="agent-status-header">
               <span className="status-dot pulsing" />
@@ -273,9 +274,7 @@ export default function Sidebar({
               Synthetic Eval
             </span>
           </div>
-
         </div>
-
       </aside>
     </>
   );
