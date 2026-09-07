@@ -22,7 +22,6 @@ Recoup decides **whether, what, and when** to do about a failed payment — and 
 - [Our Solution](#our-solution)
 - [What Makes Recoup Different](#what-makes-recoup-different)
 - [MVP — What We Actually Built](#mvp--what-we-actually-built)
-- [How the App Works](#how-the-app-works)
 - [Agent Architecture](#agent-architecture)
 - [Machine Learning](#machine-learning)
 - [Decision Engine](#decision-engine)
@@ -32,14 +31,9 @@ Recoup decides **whether, what, and when** to do about a failed payment — and 
 - [Benchmark Results](#benchmark-results)
 - [Example Agent Decision](#example-agent-decision)
 - [Technology Stack](#technology-stack)
-- [API / Backend](#api--backend)
 - [Project Structure](#project-structure)
-- [Local Setup](#local-setup)
-- [Deployment](#deployment)
 - [Limitations & Future Work](#limitations--future-work)
-- [Security / Responsible Design](#security--responsible-design)
-- [Demo Flow](#demo-flow)
-- [Final Value Proposition](#final-value-proposition)
+
 ---
  
 ## The Problem
@@ -358,38 +352,7 @@ recoup/
 └── README.md
 ```
  
----
- 
-## Local Setup
- 
-### Backend
- 
-```bash
-python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-```
- 
-### Frontend
- 
-```bash
-cd frontend
-npm install
-npm run dev
-```
- 
-### Environment Variables
- 
-The frontend and backend require Supabase credentials for authentication (URL and anon/public key). These should be provided via a local `.env` file that is **not** committed to the repository.
- 
----
- 
-## Deployment
- 
-- **Frontend** → deployed on **Vercel**
-- **Backend** → deployed on **Render**
-The deployed frontend communicates with the deployed FastAPI backend over HTTPS. No API keys or secrets are committed to source control; all credentials are supplied via environment variables in each platform's configuration.
- 
----
- 
+
 ## Limitations & Future Work
  
 ### Current Limitations
@@ -407,22 +370,6 @@ The deployed frontend communicates with the deployed FastAPI backend over HTTPS.
 - Integration with real notification providers
 - Additional/finer-grained failure classifications
 - Real-time payment event streams
-- Merchant-level optimization
-- Structured experimentation / A-B testing framework
 None of the above are implemented in the current MVP.
  
 ---
- 
-## Security / Responsible Design
- 
-- **Deterministic policy enforcement** — the ML model cannot bypass guardrails
-- **Authentication** via Supabase (email/password + Google OAuth)
-- **Complete audit logs** for every decision and outcome
-- **No secrets committed to GitHub** — credentials are environment-variable based
-- **Separation of concerns** between AI recommendation and policy enforcement
-- **Synthetic data** used throughout evaluation — no real customer payment data involved
----
-
-- **WHAT** to do next
-The core innovation is the combination of **ML prediction + economic decisioning + agentic execution + deterministic guardrails + complete auditability** — a recovery system that reasons about each failed payment on its own terms, and can explain exactly why it acted the way it did.
- 
