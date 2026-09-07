@@ -31,7 +31,6 @@ Recoup decides **whether, what, and when** to do about a failed payment — and 
 - [Benchmark Results](#benchmark-results)
 - [Example Agent Decision](#example-agent-decision)
 - [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
 - [Limitations & Future Work](#limitations--future-work)
 
 ---
@@ -329,30 +328,6 @@ This is a real trace shape from the evaluation environment where recovery ultima
  
 ---
  
- 
-## Project Structure
- 
-```
-recoup/
-├── backend/
-│   ├── main.py               # FastAPI app entrypoint
-│   ├── agent/                # Recoup agent orchestration
-│   ├── ml/                   # Model training + inference
-│   ├── decision_engine/       # Expected value scoring
-│   ├── policy_engine/         # Deterministic guardrails
-│   ├── audit/                 # Audit trail persistence
-│   └── data/                  # Synthetic datasets
-├── frontend/
-│   ├── src/
-│   │   ├── pages/             # Dashboard, checkout, audit, evaluation views
-│   │   ├── components/
-│   │   └── App.jsx
-│   ├── package.json
-│   └── vite.config.js
-└── README.md
-```
- 
-
 ## Limitations & Future Work
  
 ### Current Limitations
