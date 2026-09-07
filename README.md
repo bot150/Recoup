@@ -116,14 +116,14 @@ Payment Failed
  
 Recoup's MVP demonstrates the **complete recovery loop end-to-end** — it is a working decision system evaluated in a synthetic environment, not a production payment processor.
  
--1. Authentication
--2. Demo Checkout
--3. Recovery Operations Dashboard
--4. Recoup Agent
--5. Agent Decisions View
--6. Audit Trail
--7. Evaluation / Performance Dashboard
--8. Profile
+- 1. Authentication
+- 2. Demo Checkout
+- 3. Recovery Operations Dashboard
+- 4. Recoup Agent
+- 5. Agent Decisions View
+- 6. Audit Trail
+- 7. Evaluation / Performance Dashboard
+- 8. Profile
  
 > Recoup's MVP demonstrates the *complete recovery decision loop*, not a production payment processing platform.
  
