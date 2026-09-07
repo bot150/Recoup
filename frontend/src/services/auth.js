@@ -118,3 +118,17 @@ export async function updateProfile(profileData = {}) {
 
   return data;
 }
+export async function refreshSession() {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } =
+    await supabase.auth.refreshSession();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.session;
+}

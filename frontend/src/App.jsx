@@ -258,7 +258,10 @@ function App() {
   path="/complete-profile"
   element={
     session ? (
-      <CompleteProfile user={session.user} />
+      <CompleteProfile
+  user={session.user}
+  onProfileUpdated={setSession}
+/>
     ) : (
       <Navigate
         to="/login"

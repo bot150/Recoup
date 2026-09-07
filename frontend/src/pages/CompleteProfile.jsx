@@ -5,9 +5,15 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { updateProfile } from '../services/auth';
+import {
+  updateProfile,
+  refreshSession,
+} from '../services/auth';
 
-export default function CompleteProfile({ user }) {
+export default function CompleteProfile({
+  user,
+  onProfileUpdated,
+}) {
   const navigate = useNavigate();
 
   const existing = user?.user_metadata || {};
@@ -76,9 +82,17 @@ export default function CompleteProfile({ user }) {
     try {
       await updateProfile(form);
 
-      navigate('/overview', {
-        replace: true,
-      });
+const updatedSession =
+  await refreshSession();
+
+if (onProfileUpdated) {
+  onProfileUpdated(updatedSession);
+}
+
+navigate('/overview', {
+  replace: true,
+});
+      
 
     } catch (err) {
       console.error(err);
