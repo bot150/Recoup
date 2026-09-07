@@ -111,109 +111,25 @@ Payment Failed
   → Stop when recovery is no longer justified
 ```
  
-### A. What *and* When
-Most systems only decide *whether* to retry. Recoup jointly optimizes the **action** and the **timing window** for that action.
- 
-### B. Action Selection
-The agent chooses from a fixed action set:
- 
-| Action | Description |
-|---|---|
-| `SMART_RETRY` | Re-attempt the original payment method |
-| `PAYMENT_LINK` | Send an alternate payment link |
-| `NUDGE` | Send a reminder/notification, no charge attempt |
-| `STOP` | No further recovery action is justified |
- 
-### C. Failure-Aware Recovery
-Recoup distinguishes between failure classes — `INSUFFICIENT_FUNDS`, `BANK_ERROR`, `MANDATE_FAILURE`, `UNKNOWN` — because the right recovery approach is not the same for a bounced mandate as it is for a low-balance card.
- 
-### D. Revenue-Aware Decision Making
-Recoup optimizes **expected monetary value**, not raw success probability:
- 
-```
-Expected Recovery = (Payment Amount × Recovery Probability) − Action Cost
-```
- 
-The action most *likely* to succeed is not always the action that produces the highest *expected recovered revenue* once cost is factored in — a cheap nudge with moderate probability can outperform an expensive retry with slightly higher probability.
- 
-### E. Agentic Closed Loop
-```
-Observe → Reason → Act → Observe → Replan → Stop
-```
- 
-### F. Safety by Design
-The ML model can *recommend*, but it cannot *authorize*. Every recommended action is checked against deterministic policy limits before execution.
- 
-### G. Auditability
-Every probability, timing candidate, selected action, policy outcome, and recovery result is written to an audit log — nothing is decided silently.
- 
----
- 
+
 ## MVP — What We Actually Built
  
 Recoup's MVP demonstrates the **complete recovery loop end-to-end** — it is a working decision system evaluated in a synthetic environment, not a production payment processor.
  
-### 1. Authentication
-- Supabase authentication (email/password + Google OAuth)
-- Profile onboarding step for incomplete Google profiles
-### 2. Demo Checkout
-- Simulated checkout flow where a user enters a payment amount
-- Payment failure can be triggered on demand, with a selectable failure reason
-- The failed payment is sent to the backend for recovery
-### 3. Recovery Operations Dashboard
-- Lists failed payments with customer/payment context
-- Lets an operator trigger the Recoup agent on a given payment
-### 4. Recoup Agent
-- Receives a failed payment
-- Loads the trained ML model
-- Evaluates candidate recovery strategies and timing windows
-- Selects the best action + timing
-- Routes the decision through the Policy Engine
-- Executes the recovery action and records the outcome
-### 5. Agent Decisions View
-Shows, per payment: selected action, timing, recovery probability, expected recovery, policy result, and final outcome.
- 
-### 6. Audit Trail
-Full structured log per decision: timestamp, payment ID, customer ID, amount, failure reason, action probabilities, selected action + probability, expected recovery, timing, attempt number, policy decision, outcome, and recovered amount.
- 
-### 7. Evaluation / Performance Dashboard
-Side-by-side comparison of **Baseline**, **ML-powered recovery**, and **Agentic Recoup** across recovery rate, recovered revenue, average attempts, and uplift.
- 
-### 8. Profile
-Personal info, merchant info, account info, and authentication/security settings.
+-1. Authentication
+-2. Demo Checkout
+-3. Recovery Operations Dashboard
+-4. Recoup Agent
+-5. Agent Decisions View
+-6. Audit Trail
+-7. Evaluation / Performance Dashboard
+-8. Profile
  
 > Recoup's MVP demonstrates the *complete recovery decision loop*, not a production payment processing platform.
  
 ---
  
-## How the App Works
- 
-```
-Demo Checkout
-  → Payment Failure
-  → Recovery Operations
-  → Recoup Agent
-  → ML Predictions
-  → Candidate Strategies
-  → Decision Engine
-  → Policy Engine
-  → Action Engine
-  → Outcome
-  → Audit Trail
-```
- 
-1. **Demo Checkout** — a user simulates a payment and can force a failure with a specific reason.
-2. **Recovery Operations** — the failed payment appears in the operations dashboard.
-3. **Recoup Agent** — pulls the payment/customer context and the trained model.
-4. **ML Predictions** — the model scores recovery probability across candidate actions and timing windows.
-5. **Candidate Strategies** — a full set of (action, timing) pairs is generated.
-6. **Decision Engine** — computes expected recovery for each candidate and ranks them.
-7. **Policy Engine** — checks the top candidate against deterministic guardrails.
-8. **Action Engine** — executes the approved action.
-9. **Outcome** — the result (recovered / not recovered) is captured.
-10. **Audit Trail** — the full decision record is persisted for review.
----
- 
+
 ## Agent Architecture
  
 ```mermaid
@@ -274,15 +190,7 @@ Prediction, decision-making, policy enforcement, execution, and auditing are del
 ### Model
  
 **Random Forest Classifier**
- 
-| Hyperparameter | Value |
-|---|---|
-| Trees | 200 |
-| Max depth | 12 |
-| Class weighting | Balanced |
-| Categorical features | One-hot encoded |
-| Numerical features | Used as-is |
- 
+
 ### Evaluation
  
 | Metric | Score |
@@ -427,21 +335,6 @@ This is a real trace shape from the evaluation environment where recovery ultima
  
 ---
  
-## API / Backend
- 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | Basic service root/info |
-| `/api/health` | GET | Health check for the backend service |
-| `/api/payments` | GET | Lists payments (including failed ones) |
-| `/api/audit` | GET | Retrieves the full audit trail |
-| `/api/audit/recent` | GET | Retrieves the most recent audit entries |
-| `/api/evaluation` | GET | Returns baseline vs. ML vs. agentic benchmark metrics |
-| `/api/summary` | GET | Returns summary statistics across payments/recoveries |
-| `/api/recover/{payment_id}` | POST | Triggers the Recoup agent to evaluate and act on a payment |
-| `/api/payments/mock-failure` | POST | Simulates a failed payment for demo purposes |
- 
----
  
 ## Project Structure
  
@@ -529,35 +422,7 @@ None of the above are implemented in the current MVP.
 - **Separation of concerns** between AI recommendation and policy enforcement
 - **Synthetic data** used throughout evaluation — no real customer payment data involved
 ---
- 
-## Demo Flow
- 
-A five-minute walkthrough for judges/reviewers:
- 
-1. Log in
-2. Open Demo Checkout
-3. Simulate a payment failure (pick a failure reason)
-4. Open Recovery Operations
-5. Trigger the Recoup agent
-6. Show the candidate actions considered
-7. Show the selected action + timing
-8. Show the Policy Engine's validation
-9. Show the recovery outcome
-10. Open the Audit Trail for that decision
-11. Show the benchmark results (baseline vs. ML vs. agentic)
-12. Walk through the architecture and explain the differentiation
----
- 
-## Final Value Proposition
- 
-Recoup transforms payment recovery from a fixed retry workflow into an adaptive decision system.
- 
-Instead of blindly retrying failed payments, Recoup determines:
- 
-- **WHAT** action to take
-- **WHEN** to take it
-- **WHY** it is economically valuable
-- **WHETHER** policy allows it
+
 - **WHAT** to do next
 The core innovation is the combination of **ML prediction + economic decisioning + agentic execution + deterministic guardrails + complete auditability** — a recovery system that reasons about each failed payment on its own terms, and can explain exactly why it acted the way it did.
  
