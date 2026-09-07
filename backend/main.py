@@ -490,22 +490,20 @@ def recover_payment(payment_id: str):
 
         try:
 
-            from backend.agent import run_recovery_agent
+            from backend.recoup_agent import (
+                run_recoup,
+                load_customers,
+            )
 
-        except ImportError:
+        except ImportError as e:
 
-            try:
-                from agent import run_recovery_agent
-
-            except ImportError as e:
-
-                raise HTTPException(
-                    status_code=500,
-                    detail=(
-                        "Recovery agent could not be imported: "
-                        + str(e)
-                    )
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Recovery agent could not be imported: "
+                    + str(e)
                 )
+            )
 
         # ----------------------------------------------------
         # Execute recovery agent
@@ -540,8 +538,24 @@ def recover_payment(payment_id: str):
         # Run agent
         # ----------------------------------------------------
 
-        result = run_recovery_agent(
-            payment
+        customers = load_customers()
+
+        customer_id = str(
+            payment.get("customer_id", "")
+        )
+
+        if customer_id not in customers:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    f"Customer {customer_id} "
+                    "not found."
+                )
+            )
+
+        result = run_recoup(
+            payment,
+            customers[customer_id]
         )
 
         print("=" * 60)
