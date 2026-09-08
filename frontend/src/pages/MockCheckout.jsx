@@ -67,14 +67,17 @@ export default function MockCheckout() {
   };
 
   const continueToRecoup = () => {
-  if (!savedPayment?.payment_id) {
-    setError('Payment was not saved.');
-    return;
-  }
+    if (!savedPayment?.payment_id) {
+      setError('Payment was not saved.');
+      return;
+    }
 
-  window.location.href =
-    `/recovery?payment=${savedPayment.payment_id}`;
-};
+    navigate(
+      `/recovery?payment=${encodeURIComponent(
+        savedPayment.payment_id
+      )}`
+    );
+  };
 
   const resetCheckout = () => {
     setFailed(false);
